@@ -58,16 +58,19 @@ def calculateDifference(x1,x2):
 	col1 = getPixelColumnLine(x1)
 	col2 = getPixelColumnLine(x2)
 	# start the diff calculation
-	sum_squared_differences = 0.0
+	sum_sqrts = 0.0
 	pixel = 0
 	while pixel < imgHeight:
+		sum_squared_differences = 0.0
 		for channel in [0, 1, 2]:
 	            pixel_one = col1[pixel][channel]
 	            pixel_two = col2[pixel][channel]
 	            diff_squared = (pixel_one-pixel_two)*(pixel_one-pixel_two)
 	            sum_squared_differences += diff_squared
+		sum_sqrts += sqrt(sum_squared_differences)
 		pixel += 1
-	return sqrt(sum_squared_differences/imgHeight)
+	# Return the avg difference in distance
+	return sum_sqrts/imgHeight
 
 def cropShred(shred):
 	# calculate start and end points for crop of shredded image
@@ -88,7 +91,7 @@ def saveUnshredded():
 def sortShreds():
 	# Let's keep going till we're done
 	# raising the minDiff level will ensure completion
-	maxDiffLevel = 100
+	maxDiffLevel = 60
 	while len(shreds_mixed) > 0:
 		# Recursion time!
 		# Add the shreds the match the right edge, of last shred in the pot, to the back
@@ -97,7 +100,7 @@ def sortShreds():
 		matchShredOnLeft( shred_ordered[0],maxDiffLevel )
 		# We there yet?
 		if(len(shreds_mixed) > 0):
-			maxDiffLevel += 10
+			maxDiffLevel += 5
 			print "Hmm, still some shreds left. Increasing maxDiff to: "+str(maxDiffLevel)
 	print shred_ordered
 	
@@ -118,7 +121,7 @@ def matchShredOnLeft(shredToMatch,maxDiff):
 			# Recursion
 			matchShredOnLeft(shred,maxDiff)
 			return
-	# All done the ones to the right
+	# All done the ones to the left
 	return
 
 		
@@ -150,6 +153,29 @@ def remakeUnshreddedImage():
 	# Now save final image
 	saveUnshredded()
 
+def printColumnDiff(x1,x2):
+	print str(x1)+" & "+str(x2)+" = "+str(calculateDifference(x1,x2))
+	
 sortShreds()
 remakeUnshreddedImage()
-#print calculateDifference(192,415)
+
+# Testing Euclidean Distance for pixel column distance
+# My diffs are still to close together with false positives
+"""print "Testing Edge of Column 1R (31) with 2L (32)"
+printColumnDiff(29,30)
+printColumnDiff(30,31)
+printColumnDiff(31,32)
+printColumnDiff(32,33)
+printColumnDiff(33,34)
+print "Testing Edge of Column 2R (63) with 3L (64)"
+printColumnDiff(61,62)
+printColumnDiff(62,63)
+printColumnDiff(63,64)
+printColumnDiff(64,65)
+printColumnDiff(65,66)
+print "Testing Edge of Column 3R (95) with 4L (96)"
+printColumnDiff(93,94)
+printColumnDiff(94,95)
+printColumnDiff(95,96)
+printColumnDiff(96,97)
+printColumnDiff(97,98)"""
