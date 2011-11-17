@@ -22,6 +22,14 @@ image = Image.open(shredded_filename)
 data = image.getdata() # This gets pixel data
 imgWidth,imgHeight = image.size
 
+# Holding tank for correct order of shreds
+# We always start with shred 1 in the tank
+shred_ordered = [1]
+# We need to know how many columns
+total_shreds = imgWidth/colWidth
+# Here are the left over shreds
+shreds_mixed = range(2,total_shreds+1)
+
 # New image data
 unshredded = Image.new("RGBA", image.size)
 
@@ -32,12 +40,6 @@ unshredded = Image.new("RGBA", image.size)
 def getPixelValue(x, y):
    pixel = data[y * imgWidth + x]
    return pixel
-
-"""def print_pixel_lineHorizontal(y, startx, finishx):
-	while startx <= finishx:
-		print str(startx) + ": " + str(get_pixel_value(y, startx))
-		startx = startx + 1;
-"""
 
 def getPixelColumnLine(x):
 	# Create array that will hold column data
@@ -87,9 +89,9 @@ def printColumnEdges(col):
 	print str(col)+" Right: "+str(edges[1])
 
 def printColumnDiff(x1,x2):
-	print str(x1)+" & "+str(x2)+" = "+str(calculate_difference(x1,x2))
+	print str(x1)+" & "+str(x2)+" = "+str(calculateDifference(x1,x2))
 
-def calculate_difference(x1,x2):
+def calculateDifference(x1,x2):
 	from math import sqrt
 	# Get our pixel column
 	col1 = getPixelColumnLine(x1)
@@ -106,99 +108,87 @@ def calculate_difference(x1,x2):
 		pixel += 1
 	return sqrt(sum_squared_differences/imgHeight)
 
-def cropColumn(col):
+def cropShred(shred):
 	# calculate start and end points for crop of shredded image
-	startXY = ((col-1)*colWidth, 0)
-	endXY = (col*colWidth, imgHeight)
+	startXY = ((shred-1)*colWidth, 0)
+	endXY = (shred*colWidth, imgHeight)
 	# make the crop
 	return image.crop((startXY[0], startXY[1], endXY[0], endXY[1]))
 	
-def placeColumn(shredded_column, unshredded_column):
+def placeShred(shredded_column, unshredded_column):
 	# Calculate destination start point for unshredded column
 	destinationXY = ((unshredded_column-1)*colWidth, 0)
 	# Put the crop in it's place
-	unshredded.paste(cropColumn(shredded_column), destinationXY)
+	unshredded.paste(cropShred(shredded_column), destinationXY)
 
 def saveUnshredded():
 	unshredded.save(unshredded_filename, "JPEG")
 
-"""
-# This arranges the correct columns in the correct order	
-placeColumn(9,1)
-placeColumn(11,2)
-placeColumn(15,3)
-placeColumn(17,4)
-placeColumn(19,5)
-placeColumn(14,6)
-placeColumn(8,7)
-placeColumn(4,8)
-placeColumn(3,9)
-placeColumn(12,10)
-placeColumn(5,11)
-placeColumn(20,12)
-placeColumn(18,13)
-placeColumn(13,14)
-placeColumn(7,15)
-placeColumn(16,16)
-placeColumn(2,17)
-placeColumn(6,18)
-placeColumn(1,19)
-placeColumn(10,20)
-saveUnshredded();
- """
-"""
-# This gives the pixel average for a single pixel column
-# Will be used to match up column edges
-printPixelColumnAverage(28)
-printPixelColumnAverage(29)
-printPixelColumnAverage(30)
-printPixelColumnAverage(31)
-printPixelColumnAverage(32)
-printPixelColumnAverage(33)
-printPixelColumnAverage(34)
-"""
+def sortShreds():
+	# Let's keep going till we're done
+	# raising the minDiff level will ensure completion
+	maxDiffLevel = 100
+	while len(shreds_mixed) > 0:
+		# Recursion time!
+		# Add the shreds the match the right edge, of last shred in the pot, to the back
+		matchShredOnRight( shred_ordered[len(shred_ordered)-1],maxDiffLevel )
+		# Add the shreds the match the left edge, of last shred in the pot, to the back
+		matchShredOnLeft( shred_ordered[0],maxDiffLevel )
+		# We there yet?
+		if(len(shreds_mixed) > 0):
+			maxDiffLevel += 10
+			print "Hmm, still some shreds left. Increasing maxDiff to: "+str(maxDiffLevel)
+	print shred_ordered
+	
+def matchShredOnLeft(shredToMatch,maxDiff):
+	# Get right most x coordinate
+	lCol = (shredToMatch-1)*colWidth
+	for shred in shreds_mixed:
+		# Get left most x coordinate from unmatche shred
+		rCol = shred*colWidth-1
+		diff = calculateDifference(lCol,rCol)
+		# check for a match
+		if diff < maxDiff:
+			# We have a match. Add this shred to back of ordered shreds and 
+			# find the right most partner again
+			shred_ordered.insert(0,shred)
+			shreds_mixed.remove(shred)
+			print "Matched "+str(shred)+" <- "+str(shredToMatch)+": "+str(diff)+" diff"
+			# Recursion
+			matchShredOnLeft(shred,maxDiff)
+			return
+	# All done the ones to the right
+	return
 
-""" 
-# This will show column edges (L,R)
-# We can visually see what AI will encounter
-printColumnEdges(1)
-printColumnEdges(2)
-printColumnEdges(3)
-printColumnEdges(4)
-printColumnEdges(5)
-printColumnEdges(6)
-printColumnEdges(7)
-printColumnEdges(8)
-printColumnEdges(9)
-printColumnEdges(10)
-printColumnEdges(11)
-printColumnEdges(12)
-printColumnEdges(13)
-printColumnEdges(14)
-printColumnEdges(15)
-printColumnEdges(16)
-printColumnEdges(17)
-printColumnEdges(18)
-printColumnEdges(19)
-printColumnEdges(20)
-"""
+		
+def matchShredOnRight(shredToMatch,maxDiff):
+	# Get right most x coordinate
+	rCol = shredToMatch*colWidth-1
+	# iterate unused shreds
+	for shred in shreds_mixed:
+		# Get left most x coordinate from unmatche shred
+		lCol = (shred-1)*colWidth
+		diff = calculateDifference(lCol,rCol)
+		# check for a match
+		if diff < maxDiff:
+			# We have a match. Add this shred to back of ordered shreds and 
+			# find the right most partner again
+			shred_ordered.append(shred)
+			shreds_mixed.remove(shred)
+			print "Matched "+str(shredToMatch)+" -> "+str(shred)+": "+str(diff)+" diff"
+			# Recursion
+			matchShredOnRight(shred,maxDiff)
+			return
+	# All done the ones to the right
+	return
 
-# Testing Euclidean Distance for pixel column distance
-print "Testing Edge of Column 1R (31) with 2L (32)"
-printColumnDiff(29,30)
-printColumnDiff(30,31)
-printColumnDiff(31,32)
-printColumnDiff(32,33)
-printColumnDiff(33,34)
-print "Testing Edge of Column 2R (63) with 3L (64)"
-printColumnDiff(61,62)
-printColumnDiff(62,63)
-printColumnDiff(63,64)
-printColumnDiff(64,65)
-printColumnDiff(65,66)
-print "Testing Edge of Column 3R (95) with 4L (96)"
-printColumnDiff(93,94)
-printColumnDiff(94,95)
-printColumnDiff(95,96)
-printColumnDiff(96,97)
-printColumnDiff(97,98)
+def remakeUnshreddedImage():
+	# Iterate through the ordered shreds and place them in new image
+	for shred_index in range(1,len(shred_ordered)+1):
+		placeShred( shred_ordered[shred_index-1], shred_index )
+	# Now save final image
+	saveUnshredded()
+
+sortShreds()
+remakeUnshreddedImage()
+#print calculateDifference(192,415)
