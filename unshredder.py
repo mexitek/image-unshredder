@@ -41,7 +41,7 @@ def getPixelColumn(x):
 	# Iterate through all pixels
 	y=0
 	while y < imgHeight:
-		colData.append(getPixelValue(y,x))
+		colData.append(getPixelValue(x,y))
 		y += 1
 	# Return the collection
 	return colData
