@@ -52,45 +52,6 @@ def getPixelColumnLine(x):
 	# Return the collection
 	return colData
 
-def getPixelColumnRGBLists(x):
-	# get all pixels in the column
-	columns = getPixelColumnLine(x)
-	# Iterate and seperate into individual lists
-	r,g,b = [],[],[]
-	for col in columns:
-		r.append(col[0])
-		g.append(col[1])
-		b.append(col[2])
-	# Return list of rgb lists
-	return (r,g,b)
-
-def getPixelColumnRGBAvgs(x):
-	# Get the column pixel collection
-	rgbLists = getPixelColumnRGBLists(x)
-	return (sum(rgbLists[0])/imgHeight),(sum(rgbLists[1])/imgHeight),(sum(rgbLists[2])/imgHeight)
-	
-
-def printPixelColumnAverage(x):
-	rgbAvgs = getPixelColumnRGBAvgs(x)
-	rgbSum = (rgbAvgs[0]+rgbAvgs[1]+rgbAvgs[2])
-	# print average rgb for column
-	print str(x)+" -> ["+str(rgbAvgs[0])+","+str(rgbAvgs[1])+","+str(rgbAvgs[2])+"] = "+str(rgbSum)+"/3 = "+str(rgbSum/3)
-
-def getColumnEdges(col):
-	L_rgbAvgs = getPixelColumnRGBAvgs((col-1)*colWidth)
-	L_rgbSum = (L_rgbAvgs[0]+L_rgbAvgs[1]+L_rgbAvgs[2])
-	R_rgbAvgs = getPixelColumnRGBAvgs(col*colWidth-1)
-	R_rgbSum = (R_rgbAvgs[0]+R_rgbAvgs[1]+R_rgbAvgs[2])
-	return ( L_rgbSum/3,R_rgbSum/3 )
-
-def printColumnEdges(col):
-	edges = getColumnEdges(col)
-	print str(col)+" Left: "+str(edges[0])
-	print str(col)+" Right: "+str(edges[1])
-
-def printColumnDiff(x1,x2):
-	print str(x1)+" & "+str(x2)+" = "+str(calculateDifference(x1,x2))
-
 def calculateDifference(x1,x2):
 	from math import sqrt
 	# Get our pixel column
